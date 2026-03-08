@@ -339,7 +339,7 @@ def main():
     parser.add_argument("--randomness", type=float, default=0.3)
 
     # Architecture
-    parser.add_argument("--vocab_size", type=int, default=1880)
+    parser.add_argument("--vocab_size", type=int, default=1882)
     parser.add_argument("--max_seq_len", type=int, default=256)
     parser.add_argument("--embed_dim", type=int, default=128)
     parser.add_argument("--base_channels", type=int, default=64)

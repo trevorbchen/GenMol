@@ -123,7 +123,7 @@ class QEDSurrogate(nn.Module):
 
     def __init__(
         self,
-        vocab_size=1880,
+        vocab_size=1882,
         max_seq_len=256,
         embed_dim=128,
         base_channels=64,
