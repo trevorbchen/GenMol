@@ -1,0 +1,27 @@
+name: uncond_baseline
+output_dir: outputs/comparison
+
+model_path: model_v2.ckpt
+wall_clock_budget_sec: 3600
+
+oracle: flash_affinity
+oracle_higher_is_better: true
+oracle_params:
+  protein_pdb: FlashAffinity/data/protein_test/pdb/2VT4.pdb
+  protein_repr_path: FlashAffinity/data/protein_test/repr/esm3.lmdb
+  protein_id: 2VT4
+  checkpoint_paths:
+    - FlashAffinity/checkpoints/value_1.ckpt
+    - FlashAffinity/checkpoints/value_2.ckpt
+  task: value
+
+num_samples: 5000
+softmax_temp: 1.0
+randomness: 0.3
+min_add_len: 60
+
+methods:
+  - name: uncond
+    sampler: uncond
+    finetune: none
+    guide: none

@@ -1,0 +1,71 @@
+name: fa_4hr_trevor
+output_dir: outputs/comparison
+
+model_path: model_v2.ckpt
+wall_clock_budget_sec: 14400  # 4 hours
+
+oracle: flash_affinity
+oracle_higher_is_better: true
+oracle_params:
+  protein_pdb: FlashAffinity/data/protein_test/pdb/2VT4.pdb
+  protein_repr_path: FlashAffinity/data/protein_test/repr/esm3.lmdb
+  protein_id: 2VT4
+  checkpoint_paths:
+    - FlashAffinity/checkpoints/value_1.ckpt
+    - FlashAffinity/checkpoints/value_2.ckpt
+  task: value
+
+num_samples: 2000
+softmax_temp: 0.8
+randomness: 0.5
+min_add_len: 40
+
+methods:
+  - name: uncond
+    sampler: uncond
+    finetune: none
+    guide: none
+
+  - name: mcts
+    sampler: mcts
+    finetune: none
+    guide: none
+
+  - name: mcts_surrogate
+    sampler: mcts
+    finetune: mcts_surrogate
+    guide: none
+
+  - name: ddpp_threshold
+    sampler: uncond
+    finetune: ddpp_threshold
+    guide: none
+
+sampler_overrides:
+  mcts:
+    num_expansions: 8
+    num_simulations: 50
+    exploration_weight: 1.0
+    elite_buffer_size: 200
+
+ddpp_overrides:
+  lr: 1.0e-4
+  batch_size: 16
+  lr_logz: 1.0e-3
+  warmup_logz_steps: 100
+  replay_buffer_size: 5000
+  refill_interval: 100
+  ema_decay: 0.9999
+  num_steps: 50000
+
+mcts_surrogate:
+  candidates_per_epoch: 100
+  top_frac: 0.2
+  ddpp_steps_per_epoch: 30
+
+threshold_reward:
+  update_every: 10
+  percentile: 80.0
+  min_samples: 20
+
+cost_multipliers: [1, 2, 5, 10, 50, 100]

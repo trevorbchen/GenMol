@@ -1,0 +1,40 @@
+name: ddpp_threshold_fa
+output_dir: outputs/comparison
+
+model_path: model_v2.ckpt
+wall_clock_budget_sec: 14400
+
+oracle: flash_affinity
+oracle_higher_is_better: true
+oracle_params:
+  protein_pdb: FlashAffinity/data/protein_test/pdb/2VT4.pdb
+  protein_repr_path: FlashAffinity/data/protein_test/repr/esm3.lmdb
+  protein_id: 2VT4
+  checkpoint_paths:
+    - FlashAffinity/checkpoints/value_1.ckpt
+    - FlashAffinity/checkpoints/value_2.ckpt
+  task: value
+
+num_samples: 1000
+
+methods:
+  - name: ddpp_threshold
+    sampler: uncond
+    finetune: ddpp_threshold
+    guide: none
+
+ddpp_overrides:
+  lr: 1.0e-4
+  batch_size: 16
+  lr_logz: 1.0e-3
+  warmup_logz_steps: 100
+  replay_buffer_size: 5000
+  refill_interval: 100
+  ema_decay: 0.9999
+  num_steps: 50000
+
+threshold_reward:
+  update_every: 10
+  percentile: 80.0
+  min_samples: 20
+  initial_threshold: -2.5

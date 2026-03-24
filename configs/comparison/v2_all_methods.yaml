@@ -1,0 +1,79 @@
+name: v2_all_methods
+output_dir: outputs/results_v2
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+model_path: model_v2.ckpt
+
+# ── Oracle (FA v1 only) ───────────────────────────────────────────────────────
+oracle: flash_affinity
+oracle_higher_is_better: true
+oracle_params:
+  protein_pdb: FlashAffinity/data/protein_test/pdb/2VT4.pdb
+  protein_repr_path: FlashAffinity/data/protein_test/repr/esm3.lmdb
+  protein_id: 2VT4
+  checkpoint_paths:
+    - FlashAffinity/checkpoints/value_1.ckpt
+  task: value
+
+# ── FA score cache (shared across all methods) ────────────────────────────────
+fa_cache_path: outputs/fa_v1_cache.jsonl
+
+# ── Sampling params (shared) ──────────────────────────────────────────────────
+softmax_temp: 1.0
+randomness: 0.3
+min_add_len: 60
+
+# ── Reward shift (keeps DDPP rewards positive) ────────────────────────────────
+# FA scores in [-2.5, -1.3] → shifted to [0.5, 1.7]
+reward_shift: 3.0
+
+# ── Budget ────────────────────────────────────────────────────────────────────
+uncond_budget_sec: 3600     # Phase 0: 1hr
+method_budget_sec: 14400    # Phases 1-4: 4hr each
+
+# ── CVaR hyperparameters (TFFT paper) ─────────────────────────────────────────
+cvar_beta: 0.75             # target top 25% of reward distribution
+cvar_alpha: 0.01            # KL regularization coefficient
+cvar_t_star_fallback: -1.2  # used if Phase 0 hasn't run yet
+
+# ── DDPP shared hyperparameters ───────────────────────────────────────────────
+ddpp_overrides:
+  lr: 5.0e-5
+  lr_logz: 5.0e-4
+  batch_size: 16
+  beta: 1.0                 # DDPP inverse temperature (1.0 = Ariel's effective value)
+  replay_buffer_size: 10000
+  ema_decay: 0.9999
+  num_steps: 999999
+  steps_per_iter: 50        # gradient steps between refills (phases 1, 3)
+
+# ── Phase 0: Unconditional baseline ──────────────────────────────────────────
+uncond_batch_size: 256
+
+# ── Phase 1: Pure DDPP ────────────────────────────────────────────────────────
+pure_ddpp:
+  init_n: 512               # molecules scored upfront from base model
+  refill_n: 128             # molecules added when buffer runs low
+  min_buffer: 64            # refill threshold
+  num_gen: 1000             # final generation count
+
+# ── Phase 2: Pure MCTS ────────────────────────────────────────────────────────
+pure_mcts:
+  candidates_per_epoch: 25  # generated + oracle-scored per epoch
+  top_k: 6                  # top molecules added to DDPP buffer (~25%)
+  ddpp_steps_per_epoch: 50
+  num_gen: 1000
+
+# ── Phase 3: DDPP + CVaR ─────────────────────────────────────────────────────
+ddpp_cvar:
+  init_n: 512
+  refill_n: 128
+  min_buffer: 64
+  num_gen: 1000
+
+# ── Phase 4: MCTS surrogate + CVaR DDPP ──────────────────────────────────────
+mcts_cvar:
+  candidates_per_epoch: 100   # generated per epoch (surrogate-ranked)
+  top_frac: 0.25              # fraction sent to oracle (top 25% by surrogate)
+  ddpp_steps_per_epoch: 50
+  num_gen: 1000
